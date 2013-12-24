@@ -19,13 +19,12 @@ DOCUMENTS = Set.new
 
 task :clean do
   `rm -rf #{DOCSET_NAME + ".docset"}`
-  `rm -rf #{DOCSET_NAME + ".docset.tar.gz"}`
+  `rm     #{DOCSET_NAME + ".docset.tar.gz"}`
 end
 
-task :init => [:clean] do 
+task :init => [:clean] do
   FileUtils.mkdir_p DOC_FOLDER
-  template "templates/info.plist.erb",
-           File.join(INFO_FOLDER, "Info.plist"),
+  template "templates/info.plist.erb", File.join(INFO_FOLDER, "Info.plist"),
            bundle_identifier: DOCSET_NAME,
            bundle_name: DOCSET_NAME,
            platform_family: DOCSET_NAME,
@@ -34,21 +33,19 @@ task :init => [:clean] do
   create_db
 end
 
-task :download => [:init] do 
+task :download => [:init] do
   root = BASE_URL + "api.html"
   doc = Nokogiri::HTML(open(root))
-  # download css 
+  # download css
   download_paths doc.search("link")
 
   download root, "api.html"
-  # download sections 
+  # download sections
   download_paths doc.search(".subnav a")
-
 end
 
 
 task :populate do
-  recreate_db 
 
   record_search "API Documentation", "Guide", all_documents.find { |x| x !~ /-/ }
   all_documents.each do |path|
@@ -61,25 +58,25 @@ task :populate do
     sections.each do |section|
       key = section.attr("href").sub("#", "")
       anchor = doc.search("a").select{ |x| x.attr("name") == key}.first
-      apple_anchor = anchor.dup 
+      apple_anchor = anchor.dup
       apple_anchor.set_attribute "name", "//apple_ref/Section/#{section.text}"
       apple_anchor.set_attribute "class", "dashAnchor"
       anchor.add_next_sibling(apple_anchor)
-      record_search  parent.text + " ~ " + section.text, "Section", path + "#//apple_ref/Section/#{section.text}"
+      record_search  parent.text + " => " + section.text, "Section", path + "#//apple_ref/Section/#{section.text}"
     end
 
     cust_sections = doc.search("h2")
     cust_sections.each do |section|
-      apple_anchor = section.dup 
+      apple_anchor = section.dup
       apple_anchor.name = "a"
       apple_anchor.content = ""
       apple_anchor.set_attribute "name", "//apple_ref/Section/#{section.text}"
       apple_anchor.set_attribute "class", "dashAnchor"
       section.add_previous_sibling(apple_anchor)
-      record_search  parent.text + " ~ " + section.text, "Section", path + "#//apple_ref/Section/#{section.text}"
+      record_search  parent.text + " => " + section.text, "Section", path + "#//apple_ref/Section/#{section.text}"
     end
 
-    File.write full_path, doc.to_s 
+    File.write full_path, doc.to_s
   end
 end
 
@@ -91,8 +88,8 @@ end
 def download_paths(nodes)
   nodes.each do |node|
     name = node.attribute("href").value
-    url = BASE_URL + name 
-    download  url, name 
+    url = BASE_URL + name
+    download  url, name
   end
 end
 
@@ -113,21 +110,12 @@ def template(source, destination, payload)
   contents = File.read(source)
   generator = ERB.new(contents)
   output = generator.result(context.instance_eval { binding })
-  File.write destination, output 
-end
-
-def record_item(item)
-  record_search(item.name, item.type, item.path)
+  File.write destination, output
 end
 
 def record_search(name, type, path)
   query = "INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES ('#{name}', '#{type}', '#{path}');"
   sql_db.execute query
-end
-
-def recreate_db
-  FileUtils.remove SQL_DB
-  create_db
 end
 
 def create_db
@@ -149,5 +137,3 @@ def all_documents
   @all_documents
 end
 
-class Item < Struct.new(:name, :type, :path)
-end
