@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Chicago Boss: The Official API Reference</title>
+<link rel="stylesheet" type="text/css" href="boss.css">
+</head>
+<body>
+<header><p id="link-home"><em><a href="/">Chicago Boss home</a></em></p>
+
+<div style="text-align: center; font-style: italic;">
+<p>The Chicago Boss API is mostly stable, but still might change before 1.0.</p>
+</div>
+<div class="subnav">
+    
+    <a href="api-db.html">BossDB</a>
+     
+      |   
+    
+    <a href="api-record.html">Models</a> 
+    
+      |  
+    
+    <a href="api-news.html">Events</a>
+    
+      |  
+    
+    <a href="api-controller.html">Web Controllers</a> 
+    
+      |  
+    
+    <a href="api-mq.html">BossMQ</a>
+    
+      |   
+    
+    <strong>WebSockets</strong>
+    
+      |   
+    
+    <a href="api-session.html">Sessions</a>
+           
+      |  
+    
+    <a href="api-mail-controller.html">Mail</a> 
+    
+      |  
+    
+    <a href="api-view.html">Templates</a>
+    
+      |  
+    
+    <a href="api-test.html">Tests</a>
+    
+</div>
+</header><div id="api-content">
+
+<p>WebSockets are an HTML5 technology used for two-way messaging from inside a web page. As of version 0.8.0, Chicago Boss provides infrastructure for defining one or more WebSocket controllers. Note that WebSockets are only supported with Cowboy, so put <code>{server, cowboy}</code> in your boss.config before attempting anything on this page.</p>
+<a name="//apple_ref/Section/Server%20code" class="dashAnchor"></a><h2>Server code</h2>
+<p>The server WebSocket API is based around Erlang message-passing; to send a message to a particular client, simply send it a message like:</p>
+<div class="code">
+    WebSocket ! {text, &lt;&lt;"some text"&gt;&gt;}
+</div>
+<p>To handle incoming messages from clients, you'll need to create WebSocket controllers in your project's <code>src/websocket</code> directory. Each controller module should have a name of the form <code>&lt;app name&gt;_&lt;service name&gt;_websocket.erl</code> and be a parameterized module with parameters for <code>Req</code> and <code>SessionId</code>, e.g.:</p>
+
+<div class="code">
+    -module(myapp_myservice_websocket, [Req, SessionId]).
+</div>
+
+<p>The module should implement the <code>boss_service_handler</code> behavior. The <code>boss_service_handler</code> behavior consists of the following six functions:</p>
+<div class="code spec">
+    init() -&gt; {ok, InitialState}
+</div>
+<p>Initialize the service.</p>
+
+<div class="code spec">
+    handle_join(ServiceURL::string(), WebSocket::pid(), State) -&gt; <br>
+      {noreply, NewState} |<br>
+      {noreply, NewState, Timeout} |<br>
+      {stop, Reason, NewState
+</div>
+<p>Handle a client joining a service.</p>
+
+<div class="code spec">
+    handle_close(Reason::terminate_reason(), ServiceURL::string(), WebSocket::pid(), State) -&gt; <br>
+      {noreply, NewState} |<br>
+      {noreply, NewState, Timeout} |<br>
+      {stop, Reason, NewState}
+    <br><br>
+      -type terminate_reason() :: {normal, shutdown}<br>
+      | {normal, timeout}<br>
+      | {error, closed}<br>
+      | {remote, closed}<br>
+      | {remote, cowboy_websocket:close_code(), binary()}<br>
+      | {error, badencoding}<br>
+      | {error, badframe}<br>
+      | {error, atom()}.<br>
+</div>
+
+
+<p>Handle a client leaving a service.</p>
+
+<div class="code spec">
+    handle_incoming(ServiceURL::string(), WebSocket::pid(), Message, State) -&gt;<br>
+      {noreply, NewState} |<br>
+      {noreply, NewState, Timeout} |<br>
+      {stop, Reason, NewState}
+</div>
+<p>Handle an incoming message from a client.</p>
+
+<div class="code spec">
+    handle_broadcast(Message::term(), State) -&gt;<br>
+      {noreply, NewState} |<br>
+      {noreply, NewState, Timeout} |<br>
+      {stop, Reason, NewState}
+</div>
+<p>Handle an outgoing broadcast message from some Erlang process to
+the connected web sockets.  It is your responsibility to keep track of
+the web sockets (via handle_join and handle_close) and send the
+outgoing messages as you see fit.</p>
+
+<div class="code spec">
+    handle_info(Info, State) -&gt;<br>
+      {noreply, NewState} |<br>
+      {noreply, NewState, Timeout} |<br>
+      {stop, Reason, NewState}
+</div>
+
+<p>Handle an informational message sent to the underlying gen_server process.</p>
+
+<div class="code spec">
+    terminate(Reason, State) -&gt; ok
+</div>
+<p>Perform any cleanup before shutting down the service.</p>
+
+<a name="//apple_ref/Section/Client%20code" class="dashAnchor"></a><h2>Client code</h2>
+
+<p>WebSocket URLs are automatically generated from the WebSocket controllers in your project's <code>src/websocket</code> directory. For example, if you have <code>myapp_foobar_websocket.erl</code>, then to create a new WebSocket on the client:</p>
+<div class="code">
+&lt;script type="text/javascript"&gt;<br>
+      wsc = new WebSocket("ws://localhost:8001/websocket/foobar", "some_service_name");<br>
+&lt;/script&gt;
+</div>
+<p>The WebSocket URLs respect the <code>base_url</code> config parameter. For example, if the <code>base_url</code> is set to "/chat", then you would use this code instead:</p>
+<div class="code">
+&lt;script type="text/javascript"&gt;<br>
+      wsc = new WebSocket("ws://localhost:8001/chat/websocket/foobar", "some_service_name");<br>
+&lt;/script&gt;
+</div>
+
+<p>For a reference on the WebSocket client programming, see <a href="https://developer.mozilla.org/en/WebSockets/">Mozilla's WebSockets page</a>.</p>
+
+
+</div>
+</body>
+</html>

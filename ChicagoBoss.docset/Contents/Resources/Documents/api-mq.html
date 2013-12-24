@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Chicago Boss: The Official API Reference</title>
+</head>
+<body>
+        <link rel="stylesheet" type="text/css" href="boss.css">
+<p><em><a href="/">Chicago Boss home</a></em></p>
+
+<div style="text-align: center; font-style: italic;">
+<p>The Chicago Boss API is mostly stable, but still might change before 1.0.</p>
+</div>
+<div class="subnav">
+    
+    <a href="api-db.html">BossDB</a>
+     
+      |   
+    
+    <a href="api-record.html">Models</a> 
+    
+      |  
+    
+    <a href="api-news.html">Events</a>
+    
+      |  
+    
+    <a href="api-controller.html">Web Controllers</a> 
+    
+      |  
+    
+    <strong>BossMQ</strong>
+    
+      |   
+    
+    <a href="api-websocket.html">WebSockets</a>
+    
+      |   
+    
+    <a href="api-session.html">Sessions</a>
+           
+      |  
+    
+    <a href="api-mail-controller.html">Mail</a> 
+    
+      |  
+    
+    <a href="api-view.html">Templates</a>
+    
+      |  
+    
+    <a href="api-test.html">Tests</a>
+    
+</div>
+<div style="padding-top: 20px;">
+
+<p>BossMQ is an abstraction layer for channel-based messaging that can be used to implement real-time notifications (i.e. Comet). With BossMQ, any controller action can function as a long-polling endpoint simply by calling <code>boss_mq:pull/2</code>:</p>
+
+<div class="code">
+receive_chat('GET', []) -&gt;<br>
+  {ok, Timestamp, Messages} = boss_mq:pull("my-channel", now)<br>
+  {output, Messages}.
+</div>
+
+<p>The call to <code>pull/2</code> blocks until a message arrives on "my-channel". Because of Erlang's lightweight process model, you usually don't need to worry if <code>pull/2</code> takes a long time to complete.</p>
+
+<p>To send a message to a channel, you call <code>boss_mq:push/2</code>:</p>
+
+<div class="code">
+    boss_mq:push("my-channel", &lt;&lt;"Secret Message"&gt;&gt;)
+</div>
+
+<p>Currently, only an in-memory message queue is supported, so all messaging must occur in the same CB cluster. Additional adapters will be added in the future to support more complex installations.</p>
+
+<a name="//apple_ref/Section/boss_mq%20API" class="dashAnchor"></a><h2>boss_mq API</h2>
+
+
+
+
+
+
+
+
+
+<div class="code spec">
+    pull(Channel<span class="typevar">::string()</span>) -&gt; {ok, Timestamp, [Message]} | {error, Reason}
+</div>
+<p>Pull messages from the specified <code>Channel</code>. If none are in the queue, blocks
+  until a message is pushed to the queue.</p>
+
+
+
+<div class="code spec">
+    pull(Channel<span class="typevar">::string()</span>, Since<span class="typevar">::integer()</span> | last | now) -&gt; {ok, Timestamp, [Message]} | {error, Reason}
+</div>
+<p>Pull messages from the specified <code>Channel</code> after <code>Since</code> (a timestamp returned from a previous <code>pull</code>).
+  If no such messages are in the queue, blocks until a message is pushed to the queue.</p>
+
+
+
+<div class="code spec">
+    pull(Channel<span class="typevar">::string()</span>, Since<span class="typevar">::integer()</span> | last | now, Timeout<span class="typevar">::integer()</span>) -&gt; {ok, Timestamp, [Message]} | {error, Reason}
+</div>
+<p>Pull messages from the specified <code>Channel</code> after <code>Since</code> (a timestamp returned from a previous <code>pull</code>). If no such messages
+  are in the queue, blocks until a message is pushed to the queue, or until <code>Timeout</code> seconds have elapsed.</p>
+
+
+
+<div class="code spec">
+    poll(Channel<span class="typevar">::string()</span>) -&gt; {ok, Timestamp, [Message]} | {error, Reason}
+</div>
+<p>Like <code>pull/1</code>, but returns immediately if no messages are in the queue.</p>
+
+
+
+<div class="code spec">
+    poll(Channel<span class="typevar">::string()</span>, Since<span class="typevar">::integer()</span> | last) -&gt; {ok, Timestamp, [Message]} | {error, Reason}
+</div>
+<p>Like <code>pull/2</code>, but returns immediately if no matching messages are in the queue.</p>
+
+
+
+<div class="code spec">
+    push(Channel<span class="typevar">::string()</span>, Message) -&gt; {ok, Timestamp}
+</div>
+<p>Pushes a message to the specified <code>Channel</code>.</p>
+
+
+
+<div class="code spec">
+    now(Channel<span class="typevar">::string()</span>) -&gt; Timestamp
+</div>
+<p>Retrieves the current time for the server managing <code>Channel</code>.</p>
+
+
+
+</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Chicago Boss: The Official API Reference</title>
+</head>
+<body>
+        <link rel="stylesheet" type="text/css" href="boss.css">
+<p><em><a href="/">Chicago Boss home</a></em></p>
+
+<div style="text-align: center; font-style: italic;">
+<p>The Chicago Boss API is mostly stable, but still might change before 1.0.</p>
+</div>
+<div class="subnav">
+    
+    <a href="api-db.html">BossDB</a>
+     
+      |   
+    
+    <a href="api-record.html">Models</a> 
+    
+      |  
+    
+    <a href="api-news.html">Events</a>
+    
+      |  
+    
+    <a href="api-controller.html">Web Controllers</a> 
+    
+      |  
+    
+    <a href="api-mq.html">BossMQ</a>
+    
+      |   
+    
+    <a href="api-websocket.html">WebSockets</a>
+    
+      |   
+    
+    <strong>Sessions</strong>
+           
+      |  
+    
+    <a href="api-mail-controller.html">Mail</a> 
+    
+      |  
+    
+    <a href="api-view.html">Templates</a>
+    
+      |  
+    
+    <a href="api-test.html">Tests</a>
+    
+</div>
+<div style="padding-top: 20px;">
+
+<p>BossSession is a multiadapter session management. The following adapters are supported (specified in boss.config):</p>
+<ul>
+<li>
+<code>cache</code> - Store sessions in whatever cache system is configured. Requires <code>cache_enable</code> to be set to <code>true</code>
+    </li>
+<li>
+<code>mnesia</code> - Mnesia. Requires the node to have a name.</li>
+    <li>
+<code>mock</code> - In-memory sessions which uses ETS.</li>
+</ul>
+<p>BossSession is automatically started, so, by default an ETS based session support is provided.</p>
+
+<p>The current session ID is available to controllers as the second module parameter. To disable sessions, set "session_enable" to "false" in your boss.config file.</p>
+
+<p>BossFlash is a utility on top of boss_session, you can store messages between requests, automatically populated to the view as {{ boss_flash }} and deleted from session after used.</p>
+
+<a name="//apple_ref/Section/boss_session" class="dashAnchor"></a><h2>boss_session</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="code spec">
+    new_session(Cookie<span class="typevar">::string()</span>) -&gt; string | {error, Reason}
+</div>
+<p>Starts new session with the specified <code>Cookie</code>.</p>
+
+
+
+<div class="code spec">
+    get_session_data(SessionID) -&gt; list | {error, Reason}
+</div>
+<p>Get session data for the <code>SessionID</code>.</p>
+
+
+
+<div class="code spec">
+    get_session_data(SessionID, Key) -&gt; list | {error, Reason}
+</div>
+<p>Get session data for the <code>SessionID</code> for a given <code>Key</code>.</p>
+
+
+
+<div class="code spec">
+    set_session_data(SessionID, Key, Value) -&gt; ok | {error, Reason}
+</div>
+<p>Set session data for the <code>SessionID</code>.</p>
+
+
+
+<div class="code spec">
+    delete_session(SessionID) -&gt; ok | {error, Reason}
+</div>
+<p>Delete session for given <code>SessionID</code>.</p>
+
+
+
+<div class="code spec">
+    remove_session_data(SessionID, Key) -&gt; ok | {error, Reason}
+</div>
+<p>Remove the Key from session data for the <code>SessionID</code>.</p>
+
+
+
+
+<a name="//apple_ref/Section/boss_flash" class="dashAnchor"></a><h2>boss_flash</h2>
+
+<p>Add flash messages in the controller like:</p>
+
+<div class="code">
+boss_flash:add(SessionID, notice, "Flash Title", "Flash Message")
+</div>
+
+<p>Use the boss_flash var in the view, should render "notice - Flash Title - Flash Message":</p>
+<div class="code">
+{% for flash in boss_flash %}
+{{ flash.method }} - {{ flash.title }} - {{ flash.message }}
+{% endfor %}
+</div>
+
+<a name="//apple_ref/Section/Functions" class="dashAnchor"></a><h2>Functions</h2>
+
+
+
+<div class="code spec">
+    get_and_clear(SessionID) -&gt; [Message]
+</div>
+<p>Retrieve the current flash messages for <code>SessionID</code> and flush the message stack.</p>
+
+
+
+<div class="code spec">
+    add(SessionID, Type, Title) -&gt; ok | {error, Reason}
+</div>
+<p>Add a message to the flash message stack for <code>SessionID</code>.</p>
+
+
+
+<div class="code spec">
+    add(SessionID, Type, Title, Message) -&gt; ok | {error, Reason}
+</div>
+<p>Add a message to the flash message stack for <code>SessionID</code>.</p>
+
+
+
+
+</div>
+</body>
+</html>
